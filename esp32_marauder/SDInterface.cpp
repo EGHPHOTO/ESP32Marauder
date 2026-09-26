@@ -162,7 +162,8 @@ bool SDInterface::initSD() {
       #endif
       Serial.println(F("Using external SPI configuration..."));
       this->spiExt->begin(SPI_SCK, SPI_MISO, SPI_MOSI, SD_CS);
-      if (!SD.begin(SD_CS, *(this->spiExt))) {
+      if (!SD.begin(SD_CS, *(this->spiExt), 20000000)) {
+
     #elif defined(HAS_C5_SD)
       if (!SD.begin(SD_CS, *_spi)) {
     #else
