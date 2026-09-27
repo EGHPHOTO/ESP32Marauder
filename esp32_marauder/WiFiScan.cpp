@@ -11719,10 +11719,12 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     client->println(totalLength);
     client->println();
 
-    // Send body
-    client->print(part1);
+        // Send body
+    client->write((const uint8_t*)part1.c_str(), part1.length()); // <-- Safe fragmented byte stream
+    client->flush();
 
     marauder::UploadStreamBuffer uploadBuffer;
+
     if (!uploadBuffer) {
       fileToUpload.close();
       client->stop();
@@ -11943,8 +11945,11 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.println("Finished sending header");
 
     // Send body
-    client->print(part1);
+    client->write((const uint8_t*)part1.c_str(), part1.length()); // <-- Safe fragmented byte stream
+    client->flush();
+
     marauder::UploadStreamBuffer uploadBuffer;
+
     if (!uploadBuffer) {
       fileToUpload.close();
       client->stop();
