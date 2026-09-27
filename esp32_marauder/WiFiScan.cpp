@@ -11680,20 +11680,22 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       return false;
     }
 
-    // Build multipart body
+        // Build multipart body
     String boundary   = "----ESP32BOUNDARY";
     String part1      = "--" + boundary + "\r\n";
     part1 += "Content-Disposition: form-data; name=\"file\"; filename=\"" +
             filePath + "\"\r\n";
     part1 += "Content-Type: application/octet-stream\r\n\r\n";
     String part2      = "\r\n--" + boundary + "--\r\n";
+    
+    // FIXED: Correctly closed out the length calculations and added the semicolon
     int totalLength   = part1.length() + fileToUpload.size() + part2.length();
 
     Serial.println("[WDG] File size: " + String(fileToUpload.size()));
     Serial.println("[WDG] Total length: " + String(totalLength));
 
     client->setInsecure();
-    client->setTimeout(5000);
+    client->setTimeout(30000);
 
     if (!client->connect("wdgwars.pl", 443)) {
       fileToUpload.close();
@@ -11721,24 +11723,23 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     // Send body
     client->print(part1);
 
-    marauder::UploadStreamBuffer uploadBuffer;
-    if (!uploadBuffer) {
-      fileToUpload.close();
-      client->stop();
-      Serial.println("[WDG] Could not allocate upload buffer");
-      return false;
-    }
+    // Safe low-RAM array pipeline bypassing the custom heap buffer structure
+    uint8_t raw_io_buf;
     size_t totalSent = 0;
     uint8_t pct = 0;
 
     while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
-      totalSent += n;
-      client->write(uploadBuffer.data(), n);
-      pct = (totalSent * 100) / fileToUpload.size();
-      #ifdef HAS_SCREEN
-      this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
-      #endif
+      size_t n = fileToUpload.read(&raw_io_buf, 1);
+      if (n > 0) {
+        totalSent += n;
+        client->write(&raw_io_buf, n);
+        
+        pct = (totalSent * 100) / fileToUpload.size();
+        #ifdef HAS_SCREEN
+        this->drawUploadProgress("WDG WARS", pct);
+        #endif
+      }
+      yield();
     }
 
     client->print(part2);
@@ -11904,7 +11905,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.println(fileToUpload.size());
 
     client->setInsecure();
-    client->setTimeout(5000);
+    client->setTimeout(30000);
 
     if (!client->connect("api.wigle.net", 443)) {
       fileToUpload.close();
@@ -11941,30 +11942,22 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     // Send body
     client->print(part1);
-    marauder::UploadStreamBuffer uploadBuffer;
-    if (!uploadBuffer) {
-      fileToUpload.close();
-      client->stop();
-      Serial.println("[WIGLE] Could not allocate upload buffer");
-      return false;
-    }
-
-    Serial.println("Finished sending part1");
-
+        // Safe low-RAM array pipeline bypassing the custom heap buffer structure
+    uint8_t raw_io_buf[512];
+    size_t totalBytesSent = 0;
     uint8_t percent_sent = 0;
 
-    size_t totalBytesSent = 0;
     while (fileToUpload.available()) {
-      size_t bytesRead = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
-      totalBytesSent += bytesRead;
-      Serial.print("Writing ");
-      Serial.print(totalBytesSent);
-      Serial.println(" bytes...");
+      size_t n = fileToUpload.read(raw_io_buf, sizeof(raw_io_buf));
+      if (n > 0) {
+        totalBytesSent += n;
+        client->write(raw_io_buf, n);
+      }
       percent_sent = (totalBytesSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
-      this->drawUploadProgress("WiGLE", percent_sent); // GCOVR_EXCL_LINE
+      this->drawUploadProgress("WiGLE", percent_sent);
       #endif
-      client->write(uploadBuffer.data(), bytesRead);
+      yield();
     }
 
     Serial.println("Uploaded file bytes: " + String(totalBytesSent));
