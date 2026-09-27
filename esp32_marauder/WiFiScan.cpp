@@ -11692,7 +11692,8 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.println("[WDG] File size: " + String(fileToUpload.size()));
     Serial.println("[WDG] Total length: " + String(totalLength));
 
-    client->setBufferSizes(512, 512);
+    client->setInsecure();               // <-- Restored this back!
+    client->setHandshakeTimeout(30);     // <-- Added this official parameter (30 seconds)
     client->setTimeout(30000);
 
     if (!client->connect("wdgwars.pl", 443)) {
@@ -11903,7 +11904,8 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.print("File size: ");
     Serial.println(fileToUpload.size());
 
-    client->setBufferSizes(512, 512); 
+    client->setInsecure();               // <-- Restored this back!
+    client->setHandshakeTimeout(30);     // <-- Added this official parameter (30 seconds)
     client->setTimeout(30000);
 
     if (!client->connect("api.wigle.net", 443)) {
