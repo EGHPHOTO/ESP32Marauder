@@ -11735,15 +11735,16 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     uint8_t pct = 0;
 
 	while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
-      if (n == 0) { delay(5); yield(); continue; } // <-- Added safety wait: If card cache is empty, wait 5ms and retry instead of crashing!
+      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.capacity());
+      if (n == 0) { delay(5); yield(); continue; }
       totalSent += n;
       client->write(uploadBuffer.data(), n);
       pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
-      this->drawUploadProgress("WiGLE", pct); // GCOVR_EXCL_LINE
+      this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
       #endif
     }
+
 
 
     client->print(part2);
@@ -11965,13 +11966,13 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     size_t totalBytesSent = 0;
     while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
-      if (n == 0) { delay(5); yield(); continue; } // <-- Added safety wait: If card cache is empty, wait 5ms and retry instead of crashing!
+      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.capacity());
+      if (n == 0) { delay(5); yield(); continue; }
       totalSent += n;
       client->write(uploadBuffer.data(), n);
       pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
-      this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
+      this->drawUploadProgress("WiGLE", pct); // GCOVR_EXCL_LINE
       #endif
       client->write(uploadBuffer.data(), bytesRead);
     }
