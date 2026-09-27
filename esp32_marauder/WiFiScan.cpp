@@ -12719,6 +12719,7 @@ void WiFiScan::main(uint32_t currentTime)
     // which makes beacon spam less effective
     broadcastRandomSSID(currentTime);
 
+	  
     if (currentTime - initTime >= 1000)
     {
       set_channel = random(1,12); 
