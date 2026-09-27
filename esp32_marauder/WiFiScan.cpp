@@ -11696,7 +11696,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     client->setTimeout(30000);
 
 
-    if (!client->connect("wdgwars.pl", 443)) {
+    if (!client->connect("146.59.18.232", 443)) {
       fileToUpload.close();
       client->stop();
       #ifdef HAS_SCREEN
@@ -11911,7 +11911,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
 
 
-    if (!client->connect("api.wigle.net", 443)) {
+    if (!client->connect("184.105.239.52", 443)) {
       fileToUpload.close();
       //delete client;
       client->stop();
