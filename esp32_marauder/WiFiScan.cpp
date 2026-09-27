@@ -11713,6 +11713,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     client->println("User-Agent: ESP32Uploader/1.0");
     client->println("Accept: application/json");
     client->println("X-API-Key: " + apiKey);
+	apiKey = String(); 
     client->println("Content-Type: multipart/form-data; boundary=" + boundary);
     client->print("Content-Length: ");
     client->println(totalLength);
@@ -11925,7 +11926,8 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     // Compose headers
     String auth = base64Encode(username + ":" + token);
-
+	username = String(); 
+	token = String(); 
     Serial.println("Finished encoding");
 
     client->println("POST /api/v2/file/upload HTTP/1.1");
