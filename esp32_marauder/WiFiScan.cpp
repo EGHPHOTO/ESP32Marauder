@@ -11691,7 +11691,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     Serial.println("[WDG] File size: " + String(fileToUpload.size()));
     Serial.println("[WDG] Total length: " + String(totalLength));
-	client->setMFLN(512);
+	
     client->setInsecure();
     client->setTimeout(30000);
 
@@ -11719,11 +11719,11 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     client->println(totalLength);
     client->println();
 
-        // Send body
-    client->write((const uint8_t*)part1.c_str(), part1.length()); // <-- Safe fragmented byte stream
-    client->flush();
+    // Send body
+    client->print(part1);
 
     marauder::UploadStreamBuffer uploadBuffer;
+
 
     if (!uploadBuffer) {
       fileToUpload.close();
@@ -11905,7 +11905,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     Serial.print("File size: ");
     Serial.println(fileToUpload.size());
-	client->setMFLN(512);
+	
 	client->setInsecure();
     client->setTimeout(30000);
 
