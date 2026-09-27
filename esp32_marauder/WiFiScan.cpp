@@ -11691,10 +11691,9 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     Serial.println("[WDG] File size: " + String(fileToUpload.size()));
     Serial.println("[WDG] Total length: " + String(totalLength));
-	
-    client->setInsecure();
-    client->setTimeout(30000);
 
+    client->setInsecure();
+    client->setTimeout(5000);
 
     if (!client->connect("wdgwars.pl", 443)) {
       fileToUpload.close();
@@ -11723,8 +11722,6 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     client->print(part1);
 
     marauder::UploadStreamBuffer uploadBuffer;
-
-
     if (!uploadBuffer) {
       fileToUpload.close();
       client->stop();
@@ -11734,21 +11731,15 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     size_t totalSent = 0;
     uint8_t pct = 0;
 
-	while (fileToUpload.available()) {
+    while (fileToUpload.available()) {
       size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
-      if (n > 0) {
-        totalSent += n;
-        client->write(uploadBuffer.data(), n);
-      }
+      totalSent += n;
+      client->write(uploadBuffer.data(), n);
       pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
       this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
       #endif
-      yield(); // Feeds the hardware watchdog timer to prevent a reboot loop
     }
-
-
-
 
     client->print(part2);
     client->flush();
@@ -11911,11 +11902,9 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     Serial.print("File size: ");
     Serial.println(fileToUpload.size());
-	
-	client->setInsecure();
-    client->setTimeout(30000);
 
-
+    client->setInsecure();
+    client->setTimeout(5000);
 
     if (!client->connect("api.wigle.net", 443)) {
       fileToUpload.close();
@@ -11951,11 +11940,8 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.println("Finished sending header");
 
     // Send body
-    client->write((const uint8_t*)part1.c_str(), part1.length()); // <-- Safe fragmented byte stream
-    client->flush();
-
+    client->print(part1);
     marauder::UploadStreamBuffer uploadBuffer;
-
     if (!uploadBuffer) {
       fileToUpload.close();
       client->stop();
@@ -11969,16 +11955,15 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     size_t totalBytesSent = 0;
     while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
-      if (n > 0) {
-        totalSent += n;
-        client->write(uploadBuffer.data(), n);
-      }
-      pct = (totalSent * 100) / fileToUpload.size();
+      size_t bytesRead = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
+      totalBytesSent += bytesRead;
+      Serial.print("Writing ");
+      Serial.print(totalBytesSent);
+      Serial.println(" bytes...");
+      percent_sent = (totalBytesSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
-      this->drawUploadProgress("WiGLE", pct); // GCOVR_EXCL_LINE
+      this->drawUploadProgress("WiGLE", percent_sent); // GCOVR_EXCL_LINE
       #endif
-      yield(); // Feeds the hardware watchdog timer to prevent a reboot loop
       client->write(uploadBuffer.data(), bytesRead);
     }
 
