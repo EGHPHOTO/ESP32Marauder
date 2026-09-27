@@ -11692,10 +11692,15 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.println("[WDG] File size: " + String(fileToUpload.size()));
     Serial.println("[WDG] Total length: " + String(totalLength));
 
-    client->setTimeout(5000);
-	client->setInsecure();
+    //client->setTimeout(5000);
+	//client->setInsecure();
 	  
-    if (!client->connect("wdgwars.pl", 443)) {
+    //if (!client->connect("wdgwars.pl", 443)) {
+	  WiFiClientSecure localClient;
+		localClient.setInsecure();
+		localClient.setTimeout(5000);
+
+		if (!localClient.connect("wdgwars.pl", 443)) {
       fileToUpload.close();
       client->stop();
       #ifdef HAS_SCREEN
@@ -11708,16 +11713,16 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     }
 
     // HTTP request
-    client->println("POST /api/v2/upload-csv HTTP/1.1");
-    client->println("Host: wdgwars.pl");
-    client->println("User-Agent: ESP32Uploader/1.0");
-    client->println("Accept: application/json");
-    client->println("X-API-Key: " + apiKey);
+    localClient.println("POST /api/v2/upload-csv HTTP/1.1");
+    localClient.println("Host: wdgwars.pl");
+    localClient.println("User-Agent: ESP32Uploader/1.0");
+    localClient.println("Accept: application/json");
+    localClient.println("X-API-Key: " + apiKey);
 	apiKey = String(); 
-    client->println("Content-Type: multipart/form-data; boundary=" + boundary);
+    localClient.println("Content-Type: multipart/form-data; boundary=" + boundary);
     client->print("Content-Length: ");
-    client->println(totalLength);
-    client->println();
+    localClient.println(totalLength);
+    localClient.println();
 
     // Send body
     client->print(part1);
@@ -11735,7 +11740,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     while (fileToUpload.available()) {
       size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
       totalSent += n;
-      client->write(uploadBuffer.data(), n);
+      localClient.write(uploadBuffer.data(), n);
       pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
       this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
@@ -11833,7 +11838,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
   }
 
   // Upload one log file to Wigle
-  bool WiFiScan::wigleUpload(String filePath) {
+  	bool WiFiScan::wigleUpload(String filePath) {
     bool gotAny = false;
 
     #ifdef HAS_SCREEN
@@ -11904,12 +11909,18 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.print("File size: ");
     Serial.println(fileToUpload.size());
 
-    client->setInsecure();
-    client->setTimeout(5000);
-	client->setTimeout(5000);
-	client->setInsecure();
+    //client->setInsecure();
+    //client->setTimeout(5000);
+	//client->setTimeout(5000);
+	//client->setInsecure();
 
-    if (!client->connect("api.wigle.net", 443)) {
+    //if (!client->connect("api.wigle.net", 443)) {
+		WiFiClientSecure localClient;
+		localClient.setInsecure();
+		localClient.setTimeout(5000);
+		
+		if (!localClient.connect("api.wigle.net", 443)) {
+		
       fileToUpload.close();
       //delete client;
       client->stop();
@@ -11930,15 +11941,15 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 	token = String(); 
     Serial.println("Finished encoding");
 
-    client->println("POST /api/v2/file/upload HTTP/1.1");
-    client->println("Host: api.wigle.net");
-    client->println("User-Agent: ESP32Uploader/1.0");
-    client->println("Accept: application/json");
-    client->println("Authorization: Basic " + auth);
-    client->println("Content-Type: " + contentType);
+    localClient.println("POST /api/v2/file/upload HTTP/1.1");
+    localClient.println("Host: api.wigle.net");
+    localClient.println("User-Agent: ESP32Uploader/1.0");
+    localClient.println("Accept: application/json");
+    localClient.println("Authorization: Basic " + auth);
+    localClient.println("Content-Type: " + contentType);
     client->print("Content-Length: ");
-    client->println(totalLength);
-    client->println();
+    localClient.println(totalLength);
+    localClient.println();
     delay(100);
 
     Serial.println("Finished sending header");
@@ -11968,7 +11979,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       #ifdef HAS_SCREEN
       this->drawUploadProgress("WiGLE", percent_sent); // GCOVR_EXCL_LINE
       #endif
-      client->write(uploadBuffer.data(), bytesRead);
+      localClient.write(uploadBuffer.data(), bytesRead);
     }
 
     Serial.println("Uploaded file bytes: " + String(totalBytesSent));
