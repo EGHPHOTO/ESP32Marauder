@@ -11735,15 +11735,18 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     uint8_t pct = 0;
 
 	while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.capacity());
-      if (n == 0) { delay(5); yield(); continue; }
-      totalSent += n;
-      client->write(uploadBuffer.data(), n);
+      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
+      if (n > 0) {
+        totalSent += n;
+        client->write(uploadBuffer.data(), n);
+      }
       pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
       this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
       #endif
+      yield(); // Feeds the hardware watchdog timer to prevent a reboot loop
     }
+
 
 
 
@@ -11966,14 +11969,16 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     size_t totalBytesSent = 0;
     while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.capacity());
-      if (n == 0) { delay(5); yield(); continue; }
-      totalSent += n;
-      client->write(uploadBuffer.data(), n);
+      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
+      if (n > 0) {
+        totalSent += n;
+        client->write(uploadBuffer.data(), n);
+      }
       pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
       this->drawUploadProgress("WiGLE", pct); // GCOVR_EXCL_LINE
       #endif
+      yield(); // Feeds the hardware watchdog timer to prevent a reboot loop
       client->write(uploadBuffer.data(), bytesRead);
     }
 
