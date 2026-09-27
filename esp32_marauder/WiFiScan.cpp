@@ -11680,72 +11680,25 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       return false;
     }
 
-        // Build multipart body
-    String boundary   = "----ESP32BOUNDARY";
-    String part1      = "--" + boundary + "\r\n";
-    part1 += "Content-Disposition: form-data; name=\"file\"; filename=\"" +
-            filePath + "\"\r\n";
-    part1 += "Content-Type: application/octet-stream\r\n\r\n";
-    String part2      = "\r\n--" + boundary + "--\r\n";
-    
-    // FIXED: Correctly closed out the length calculations and added the semicolon
-    int totalLength   = part1.length() + fileToUpload.size() + part2.length();
+       #include <HTTPClient.h>
+    HTTPClient http;
+    http.begin("https://wdgwars.pl");
+    http.addHeader("X-API-Key", apiKey);
+    http.addHeader("Content-Type", "text/csv");
+    http.setTimeout(30000);
 
-    Serial.println("[WDG] File size: " + String(fileToUpload.size()));
-    Serial.println("[WDG] Total length: " + String(totalLength));
+    #ifdef HAS_SCREEN
+    this->drawUploadProgress("WDG WARS", 50);
+    #endif
 
-    client->setInsecure();
-    client->setTimeout(30000);
-
-    if (!client->connect("wdgwars.pl", 443)) {
-      fileToUpload.close();
-      client->stop();
-      #ifdef HAS_SCREEN
-      display_obj.clearScreen();
-      display_obj.showCenterText("WDG connect fail", TFT_HEIGHT / 2, true);
-      delay(2000);
-      #endif
-      Serial.println("[WDG] Failed to connect to wdgwars.pl");
-      return false;
-    }
-
-    // HTTP request
-    client->println("POST /api/v2/upload-csv HTTP/1.1");
-    client->println("Host: wdgwars.pl");
-    client->println("User-Agent: ESP32Uploader/1.0");
-    client->println("Accept: application/json");
-    client->println("X-API-Key: " + apiKey);
-    client->println("Content-Type: multipart/form-data; boundary=" + boundary);
-    client->print("Content-Length: ");
-    client->println(totalLength);
-    client->println();
-
-    // Send body
-    client->print(part1);
-
-        // Safe low-RAM array pipeline using stable 64-byte fragmentation
-    uint8_t raw_io_buf[64];
-    size_t totalSent = 0;
-    uint8_t pct = 0;
-
-    while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(raw_io_buf, sizeof(raw_io_buf));
-      if (n > 0) {
-        totalSent += n;
-        client->write(raw_io_buf, n);
-        client->flush(); // Force packet transmission to prevent buffer jams
-        
-        pct = (totalSent * 100) / fileToUpload.size();
-        #ifdef HAS_SCREEN
-        this->drawUploadProgress("WDG WARS", pct);
-        #endif
-      }
-      yield();
-    }
-
-    client->print(part2);
-    client->flush();
+    int httpResponseCode = http.sendRequest("POST", &fileToUpload, fileToUpload.size());
+    size_t totalSent = fileToUpload.size();
     fileToUpload.close();
+    
+    String response = http.getString();
+    http.end();
+    bool gotAny = true;
+
 
     Serial.println("[WDG] Bytes sent: " + String(totalSent));
 
@@ -11881,154 +11834,41 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     //Serial.println("Username: " + username);
     //Serial.println("Token: " + token);
 
-    String boundary = "----ESP32BOUNDARY";
-    String contentType = "multipart/form-data; boundary=" + boundary;
+       #include <HTTPClient.h>
+    HTTPClient http;
+    http.begin("https://wigle.net");
+    String auth = base64Encode(username + ":" + token);
+    http.addHeader("Authorization", "Basic " + auth);
+    http.addHeader("Content-Type", "application/octet-stream");
+    http.setTimeout(30000);
 
-    // Build parts
-    String part1 = "--" + boundary + "\r\n";
-    part1 += "Content-Disposition: form-data; name=\"file\"; filename=\"" + filePath + "\"\r\n";
-    part1 += "Content-Type: application/octet-stream\r\n\r\n";
+    #ifdef HAS_SCREEN
+    this->drawUploadProgress("WiGLE", 50);
+    #endif
 
-    String part2 = "\r\n--" + boundary + "\r\n";
-    part2 += "Content-Disposition: form-data; name=\"donate\"\r\n\r\non\r\n";
-
-    String part3 = "--" + boundary + "--\r\n";
-
-    int totalLength = part1.length() + fileToUpload.size() + part2.length() + part3.length();
-
-    Serial.println("part1.length(): " + String(part1.length()));
-    Serial.println("fileToUpload.size(): " + String(fileToUpload.size()));
-    Serial.println("part2.length(): " + String(part2.length()));
-    Serial.println("part3.length(): " + String(part3.length()));
-    Serial.println("Total Content-Length: " + String(totalLength));
-
-    Serial.print("File size: ");
-    Serial.println(fileToUpload.size());
-
-    client->setInsecure();
-    client->setTimeout(30000);
-
-    if (!client->connect("api.wigle.net", 443)) {
-      fileToUpload.close();
-      //delete client;
-      client->stop();
+    int httpResponseCode = http.sendRequest("POST", &fileToUpload, fileToUpload.size());
+    fileToUpload.close();
+    
+    String response = http.getString();
+    http.end();
+    bool gotAny = true;
+    bool ok = (httpResponseCode == 200 || httpResponseCode == 201);
+    
+    if (ok) {
       #ifdef HAS_SCREEN
       display_obj.clearScreen();
-      display_obj.showCenterText("Could not connect", TFT_HEIGHT / 2, true);
-      delay(2000);
+      display_obj.showCenterText("WIGLE OK", TFT_HEIGHT / 2, true);
       #endif
-      Serial.println("Failed to connected to api.wigle.net");
-      return false;
+    } else {
+      #ifdef HAS_SCREEN
+      display_obj.clearScreen();
+      display_obj.showCenterText("WiGLE Failed", TFT_HEIGHT / 2, true);
+      #endif
     }
-
-    Serial.println("Connected");
-
-    // Compose headers
-    String auth = base64Encode(username + ":" + token);
-
-    Serial.println("Finished encoding");
-
-    client->println("POST /api/v2/file/upload HTTP/1.1");
-    client->println("Host: api.wigle.net");
-    client->println("User-Agent: ESP32Uploader/1.0");
-    client->println("Accept: application/json");
-    client->println("Authorization: Basic " + auth);
-    client->println("Content-Type: " + contentType);
-    client->print("Content-Length: ");
-    client->println(totalLength);
-    client->println();
-    delay(100);
-
-    Serial.println("Finished sending header");
-
-    // Send body
-    client->print(part1);
-        // Safe low-RAM array pipeline using stable 64-byte fragmentation
-    uint8_t raw_io_buf[64];
-    size_t totalBytesSent = 0;
-    uint8_t percent_sent = 0;
-
-    Serial.println("Finished sending part1");
-
-    while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(raw_io_buf, sizeof(raw_io_buf));
-      if (n > 0) {
-        totalBytesSent += n;
-        client->write(raw_io_buf, n);
-        client->flush(); // Force packet transmission to prevent buffer jams
-        
-        Serial.print("Writing ");
-        Serial.print(totalBytesSent);
-        Serial.println(" bytes...");
-        
-        percent_sent = (totalBytesSent * 100) / fileToUpload.size();
-        #ifdef HAS_SCREEN
-        this->drawUploadProgress("WiGLE", percent_sent);
-        #endif
-      }
-      yield();
-    }
-
-    Serial.println("Uploaded file bytes: " + String(totalBytesSent));
-
-    client->print(part2);
-    client->print(part3);
-    client->flush();
-
-    Serial.println("Finished sending part2 and part3");
-
-    #ifdef HAS_SCREEN
-      this->drawUploadProgress("WiGLE", 100, true); // GCOVR_EXCL_LINE
-    #endif
-
-    fileToUpload.close();
-
-    // Read response
-    String response;
-    unsigned long timeout = millis();
-    while (millis() - timeout < 5000) {
-      while (client->available()) {
-        gotAny = true;
-        char c = client->read();
-        Serial.print(c);
-        response += c;
-      }
-
-      if (gotAny && !client->connected()) {
-        break;
-      }
-
-
-      delay(10);
-    }
-
-    Serial.println();
-
-    if (!gotAny) {
-      Serial.println("[WIGLE] No response bytes received");
-    }
-
-    if (millis() - timeout >= 5000)
-      Serial.println("Timeout reached");
-    if (!client->connected())
-      Serial.println("Client disconnected");
-        
-    client->stop();
-
-    String respTrunc = response.length() > 200 ? response.substring(0, 200) : response;
-    Serial.println("[WIGLE] Response: " + respTrunc);
-
-    bool ok = response.indexOf("200 OK") >= 0;
-    #ifdef HAS_SCREEN
-    display_obj.clearScreen();
-    display_obj.showCenterText(ok ? "WIGLE OK" : "WIGLE Failed", TFT_HEIGHT / 2, true);
-    #endif
-
-    if (!ok)
-      Serial.println(response);
-
+    delay(1000);
     return ok;
   }
+
 #endif
 
 void WiFiScan::setFoxHuntTarget(const uint8_t mac[6], const String& name, int8_t rssi, uint8_t channel, bool bluetooth, const String& advertised_address) {
