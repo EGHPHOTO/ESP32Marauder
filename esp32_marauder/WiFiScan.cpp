@@ -11696,7 +11696,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     client->setTimeout(30000);
 
 
-    if (!client->connect("146.59.18.232", 443)) {
+    if (!client->connect("wdgwars.pl", 443)) {
       fileToUpload.close();
       client->stop();
       #ifdef HAS_SCREEN
@@ -11734,15 +11734,17 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     size_t totalSent = 0;
     uint8_t pct = 0;
 
-    while (fileToUpload.available()) {
+	while (fileToUpload.available()) {
       size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
+      if (n == 0) { delay(5); yield(); continue; } // <-- Added safety wait: If card cache is empty, wait 5ms and retry instead of crashing!
       totalSent += n;
       client->write(uploadBuffer.data(), n);
       pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
-      this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
+      this->drawUploadProgress("WiGLE", pct); // GCOVR_EXCL_LINE
       #endif
     }
+
 
     client->print(part2);
     client->flush();
@@ -11911,7 +11913,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
 
 
-    if (!client->connect("184.105.239.52", 443)) {
+    if (!client->connect("api.wigle.net", 443)) {
       fileToUpload.close();
       //delete client;
       client->stop();
@@ -11963,14 +11965,13 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     size_t totalBytesSent = 0;
     while (fileToUpload.available()) {
-      size_t bytesRead = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
-      totalBytesSent += bytesRead;
-      Serial.print("Writing ");
-      Serial.print(totalBytesSent);
-      Serial.println(" bytes...");
-      percent_sent = (totalBytesSent * 100) / fileToUpload.size();
+      size_t n = fileToUpload.read(uploadBuffer.data(), uploadBuffer.size());
+      if (n == 0) { delay(5); yield(); continue; } // <-- Added safety wait: If card cache is empty, wait 5ms and retry instead of crashing!
+      totalSent += n;
+      client->write(uploadBuffer.data(), n);
+      pct = (totalSent * 100) / fileToUpload.size();
       #ifdef HAS_SCREEN
-      this->drawUploadProgress("WiGLE", percent_sent); // GCOVR_EXCL_LINE
+      this->drawUploadProgress("WDG WARS", pct); // GCOVR_EXCL_LINE
       #endif
       client->write(uploadBuffer.data(), bytesRead);
     }
