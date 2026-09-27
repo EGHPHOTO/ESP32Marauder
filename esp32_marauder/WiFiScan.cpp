@@ -11697,6 +11697,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 	  
     //if (!client->connect("wdgwars.pl", 443)) {
 	  WiFiClientSecure localClient;
+    localClient.setBufferSizes(2048, 1024); 
 		localClient.setInsecure();
 		localClient.setTimeout(5000);
 
@@ -11916,6 +11917,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     //if (!client->connect("api.wigle.net", 443)) {
 		WiFiClientSecure localClient;
+    localClient.setBufferSizes(2048, 1024); 
 		localClient.setInsecure();
 		localClient.setTimeout(5000);
 		
