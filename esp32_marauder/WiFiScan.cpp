@@ -11723,16 +11723,17 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     // Send body
     client->print(part1);
 
-    // Safe low-RAM array pipeline bypassing the custom heap buffer structure
-    uint8_t raw_io_buf;
+        // Safe low-RAM array pipeline using stable 64-byte fragmentation
+    uint8_t raw_io_buf[64];
     size_t totalSent = 0;
     uint8_t pct = 0;
 
     while (fileToUpload.available()) {
-      size_t n = fileToUpload.read(&raw_io_buf, 1);
+      size_t n = fileToUpload.read(raw_io_buf, sizeof(raw_io_buf));
       if (n > 0) {
         totalSent += n;
-        client->write(&raw_io_buf, n);
+        client->write(raw_io_buf, n);
+        client->flush(); // Force packet transmission to prevent buffer jams
         
         pct = (totalSent * 100) / fileToUpload.size();
         #ifdef HAS_SCREEN
@@ -11942,21 +11943,29 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     // Send body
     client->print(part1);
-        // Safe low-RAM array pipeline bypassing the custom heap buffer structure
-    uint8_t raw_io_buf[512];
+        // Safe low-RAM array pipeline using stable 64-byte fragmentation
+    uint8_t raw_io_buf[64];
     size_t totalBytesSent = 0;
     uint8_t percent_sent = 0;
+
+    Serial.println("Finished sending part1");
 
     while (fileToUpload.available()) {
       size_t n = fileToUpload.read(raw_io_buf, sizeof(raw_io_buf));
       if (n > 0) {
         totalBytesSent += n;
         client->write(raw_io_buf, n);
+        client->flush(); // Force packet transmission to prevent buffer jams
+        
+        Serial.print("Writing ");
+        Serial.print(totalBytesSent);
+        Serial.println(" bytes...");
+        
+        percent_sent = (totalBytesSent * 100) / fileToUpload.size();
+        #ifdef HAS_SCREEN
+        this->drawUploadProgress("WiGLE", percent_sent);
+        #endif
       }
-      percent_sent = (totalBytesSent * 100) / fileToUpload.size();
-      #ifdef HAS_SCREEN
-      this->drawUploadProgress("WiGLE", percent_sent);
-      #endif
       yield();
     }
 
